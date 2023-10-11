@@ -1,0 +1,50 @@
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The Platform to execute on
+        type: string
+        default: self-hosted
+      package-manager:
+        description: The package manager to be used
+        type: string
+        default: npm
+      project-folder:
+        description: The folder containing the project to build
+        type: string
+        default: .
+    secrets:
+      SONAR_TOKEN:
+        required: true
+      SONAR_HOST_URL:
+        required: true
+
+
+jobs:
+  main:
+    name: "Sonarqube Scan" # modify to suit project name
+    runs-on: ${{ inputs.runs-on }} # Preferable to make use of Yassir self hosted github runners
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Disable shallow clone to allow SonarQube retrieve full history of project repository.
+      # This block adds code coverage to your build process (use npm/yarn/pnpm depending on your project package manager)
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8.4.0
+      - name: Install dependencies
+        run: ${{ inputs.package-manager }} install
+      - name: Unit Test and Test Coverage
+        run: ${{ inputs.package-manager }} test --coverage
+      # End of code coverage block
+      - uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      # If you wish to fail your job when the Quality Gate is red, uncomment the
+      # following lines. This would typically be used to fail a deployment.
+      # Leave commented out if you are yet to set up Quality Gate for your project on SonarQube
+      # - uses: sonarsource/sonarqube-quality-gate-action@master
+      #   timeout-minutes: 5
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
