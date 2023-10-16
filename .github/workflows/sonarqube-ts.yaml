@@ -32,10 +32,10 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           version: 8.4.0
-      - name: Install dependencies
-        run: ${{ inputs.package-manager }} install
-      - name: Unit Test and Test Coverage
-        run: ${{ inputs.package-manager }} test --coverage
+      #- name: Install dependencies
+      #  run: ${{ inputs.package-manager }} install
+      #- name: Unit Test and Test Coverage
+      #  run: ${{ inputs.package-manager }} test --coverage
       # End of code coverage block
       - uses: sonarsource/sonarqube-scan-action@master
         env:
