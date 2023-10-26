@@ -1,0 +1,19 @@
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The Platform to execute on
+        type: string
+        default: self-hosted
+
+jobs:
+  nodejs-scan:
+    name: "Trigger NodeJS Audit"
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Audit code
+        uses: ajinabraham/njsscan-action@master
+        with:
+          args: '.'
