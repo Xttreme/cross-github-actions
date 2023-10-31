@@ -21,5 +21,5 @@ jobs:
       - name: Scan IAC
         uses: bridgecrewio/checkov-action@master
         with:
-          directory: {{ inputs.directory }}
+          directory: ${{ inputs.directory }}
           framework: terraform
