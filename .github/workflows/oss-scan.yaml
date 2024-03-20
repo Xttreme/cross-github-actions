@@ -15,6 +15,11 @@ on:
         type: string
         default: 'MEDIUM,HIGH,CRITICAL'
         required: true
+      exit-code:
+        description: Toggle scan failure if vulnerabilities are found
+        type: number
+        default: 1
+        required: true
 
 jobs:
   trivy-scan:
@@ -31,3 +36,4 @@ jobs:
           scan-type: 'repo'
           scan-ref: .
           severity: ${{ inputs.severity }}
+          exit-code: ${{ inputs.exit-code }}
