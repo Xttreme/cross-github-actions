@@ -1,0 +1,29 @@
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The Platform to execute on
+        type: string
+        default: self-hosted
+      exit-warning:
+        description: Toggle scan failure if vulnerabilities are found
+        type: number
+        default: 1
+        required: true
+
+jobs:
+  mobsf-scan:
+    name: "MobSF Code Scan"
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Mobile App Scan
+        uses: MobSF/mobsfscan@0.3.8
+        with:
+          args: '. --exit-warning {{ inputs.warning }} --sarif --output results.sarif || true'
+    - name: Upload mobsfscan report
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: results.sarif
