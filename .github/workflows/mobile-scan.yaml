@@ -22,8 +22,4 @@ jobs:
       - name: Mobile App Scan
         uses: MobSF/mobsfscan@0.3.8
         with:
-          args: '. --exit-warning {{ inputs.warning }} --sarif --output results.sarif || true'
-    - name: Upload mobsfscan report
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: results.sarif
+          args: '. --exit-warning {{ inputs.warning }}'
