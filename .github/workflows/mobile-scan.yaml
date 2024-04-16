@@ -16,3 +16,5 @@ jobs:
           fetch-depth: 0
       - name: Mobile App Scan
         uses: MobSF/mobsfscan@0.3.8
+        with:
+          args: '.'
