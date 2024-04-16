@@ -22,4 +22,4 @@ jobs:
       - name: Mobile App Scan
         uses: MobSF/mobsfscan@0.3.8
         with:
-          args: . --exit-warning {{ inputs.warning }}
+          args: . --exit-warning ${{ inputs.warning }}
