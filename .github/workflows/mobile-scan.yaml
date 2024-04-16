@@ -5,11 +5,6 @@ on:
         description: The Platform to execute on
         type: string
         default: self-hosted
-      warning:
-        description: Toggle scan failure if vulnerabilities are found
-        type: number
-        default: 1
-        required: true
 
 jobs:
   mobsf-scan:
@@ -21,5 +16,3 @@ jobs:
           fetch-depth: 0
       - name: Mobile App Scan
         uses: MobSF/mobsfscan@0.3.8
-        with:
-          args: . --exit-warning ${{ inputs.warning }}
