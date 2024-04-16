@@ -5,7 +5,7 @@ on:
         description: The Platform to execute on
         type: string
         default: self-hosted
-      exit-warning:
+      warning:
         description: Toggle scan failure if vulnerabilities are found
         type: number
         default: 1
