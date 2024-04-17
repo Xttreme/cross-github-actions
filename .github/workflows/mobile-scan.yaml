@@ -18,3 +18,30 @@ jobs:
         uses: MobSF/mobsfscan@0.3.8
         with:
           args: '.'
+
+  notify-sec-team:
+    if: ${{ always() }}
+    needs: mobsf-scan
+    name: "Slack notification"
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Slack notification
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          # For posting a rich message using Block Kit
+          payload: |
+            {
+              "text": "GitHub Action build result",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "GitHub Action build result: "
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
