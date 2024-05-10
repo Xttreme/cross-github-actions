@@ -17,4 +17,4 @@ jobs:
       - name: Mobile App Scan
         uses: MobSF/mobsfscan@0.3.8
         with:
-          args: '.'
+          args: '. --exit-warning'
