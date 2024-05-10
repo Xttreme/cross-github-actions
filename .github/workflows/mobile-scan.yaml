@@ -4,7 +4,7 @@ on:
       runs-on:
         description: The Platform to execute on
         type: string
-        default: self-hosted
+        default: ubuntu-latest
 
 jobs:
   mobsf-scan:
