@@ -4,7 +4,11 @@ on:
       runs-on:
         description: The Platform to execute on
         type: string
-        default: ubuntu-latest
+        default: linux-iac
+      args:
+        description: Extra arguments
+        type: string
+        default: '. --exit-warning'
 
 jobs:
   mobsf-scan:
@@ -17,4 +21,4 @@ jobs:
       - name: Mobile App Scan
         uses: MobSF/mobsfscan@0.3.8
         with:
-          args: '. --exit-warning'
+          args: ${{ inputs.args }}
