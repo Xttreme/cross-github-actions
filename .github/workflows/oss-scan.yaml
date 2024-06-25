@@ -42,3 +42,24 @@ jobs:
           severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
           skip-dirs: ${{ inputs.skip-dirs }}
+
+  slack-alert:
+    uses: slackapi/slack-github-action@v1.25.0
+    with:
+      # For posting a rich message using Block Kit
+      payload: |
+        {
+          "text": "GitHub Action build result: ${{ mobsf-scan.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
+          "blocks": [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "GitHub Action build result: ${{ mobsf-scan.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+              }
+            }
+          ]
+        }
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SECURITY_ALERT_WEBHOOK_URL }}
+      SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
