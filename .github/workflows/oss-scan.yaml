@@ -1,0 +1,65 @@
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The Platform to execute on
+        type: string
+        default: self-hosted
+      directory:
+        description: The terraform plan output directory
+        type: string
+        default: .
+        required: true
+      severity:
+        description: The severities to output
+        type: string
+        default: 'MEDIUM,HIGH,CRITICAL'
+        required: true
+      exit-code:
+        description: Toggle scan failure if vulnerabilities are found
+        type: number
+        default: 1
+        required: true
+      skip-dirs:
+        description: Comma separated list of directories where traversal is skipped
+        type: string
+        required: false
+
+jobs:
+  trivy-scan:
+    name: "Trigger Trivy Scan"
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Scan OSS
+        uses: aquasecurity/trivy-action@0.17.0
+        with:
+          scanners: 'vuln,misconfig'
+          scan-type: 'repo'
+          scan-ref: .
+          severity: ${{ inputs.severity }}
+          exit-code: ${{ inputs.exit-code }}
+          skip-dirs: ${{ inputs.skip-dirs }}
+
+  slack-alert:
+    uses: slackapi/slack-github-action@v1.25.0
+    with:
+      # For posting a rich message using Block Kit
+      payload: |
+        {
+          "text": "GitHub Action build result: ${{ mobsf-scan.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
+          "blocks": [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "GitHub Action build result: ${{ mobsf-scan.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+              }
+            }
+          ]
+        }
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SECURITY_ALERT_WEBHOOK_URL }}
+      SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
