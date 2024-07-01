@@ -8,38 +8,48 @@ on:
       args:
         description: Extra arguments
         type: string
-        default: '. --exit-warning'
+        default: '. --json --no-fail'
+    secrets:
+      SLACK_SECURITY_ALERT_WEBHOOK_URL:
+        description: "Slack Webhook URL for alerts"
+        required: true
 
 jobs:
-  mobsf-scan:
-    name: "MobSF SAST Scan"
+  mobsfscan:
+    runs-on: ${{ inputs.runs-on }}
+    name: Mobile App Scan
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v3
+    - name: Mobile App Scan
+      uses: MobSF/mobsfscan@0.3.8
+      with:
+        args: ${{ inputs.args }}
+
+  slack-alert:
+    if: always()
+    needs: mobsfscan
     runs-on: ${{ inputs.runs-on }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Display outputs
+        run:  |
+          echo ${{ needs.mobsfscan.outputs }}
+      - name: Post Slack Alert
+        uses: slackapi/slack-github-action@v1.25.0
         with:
-          fetch-depth: 0
-      - name: Mobile App Scan
-        uses: MobSF/mobsfscan@0.3.8
-        with:
-          args: ${{ inputs.args }}
-
-  # slack-alert:
-  #   uses: slackapi/slack-github-action@v1.25.0
-  #   with:
-  #     # For posting a rich message using Block Kit
-  #     payload: |
-  #       {
-  #         "text": "GitHub Action build result: ${{ mobsf-scan.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
-  #         "blocks": [
-  #           {
-  #             "type": "section",
-  #             "text": {
-  #               "type": "mrkdwn",
-  #               "text": "GitHub Action build result: ${{ mobsf-scan.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
-  #             }
-  #           }
-  #         ]
-  #       }
-  #   env:
-  #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SECURITY_ALERT_WEBHOOK_URL }}
-  #     SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          payload: |
+            {
+              "text": "GitHub Action build result: ${{ needs.mobsfscan.result }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "GitHub Action build result: ${{ needs.mobsfscan.result }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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44"
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
