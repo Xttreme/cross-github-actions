@@ -15,7 +15,7 @@ on:
         required: true
 
 jobs:
-  mobsfscan:
+  mobsf-scan:
     runs-on: ${{ inputs.runs-on }}
     name: Mobile App Scan
     steps:
@@ -29,18 +29,17 @@ jobs:
 
   slack-alert:
     if: always()
-    needs: mobsfscan
+    needs: mobsf-scan
     runs-on: ${{ inputs.runs-on }}
     continue-on-error: true
     steps:
       - name: Trigger Slack Notification
         uses: rtCamp/action-slack-notify@v2.3.0
         env:
-          SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
+          SLACK_WEBHOOK: "YOUR_SLACK_WEBHOOK_HERE"
           SLACK_CHANNEL: github-security-alerts
-          SLACK_COLOR: ${{ needs.mobsfscan.result }}
-          SLACK_MESSAGE: ':hammer_and_wrench: Mobile App Scanner detected issues.'
-          MSG_MINIMAL: event,actions url,commit
+          SLACK_COLOR: ${{ needs.mobsf-scan.result }}
+          SLACK_MESSAGE: ':hammer_and_wrench: Mobile App Scanner detected security issues.'
           SLACK_TITLE: Information
           SLACK_FOOTER: Powered by Yassir Security Team
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
