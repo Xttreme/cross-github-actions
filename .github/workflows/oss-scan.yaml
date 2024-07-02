@@ -37,6 +37,7 @@ jobs:
           scan-ref: .
           severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
+          
   slack-alert:
     if: always()
     needs: trivy-scan
