@@ -42,9 +42,9 @@ jobs:
           severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
           skip-dirs: ${{ inputs.skip-dirs }}
-          
+
   slack-alert:
-    if: always()
+    if: failure()
     needs: trivy-scan
     runs-on: ${{ inputs.runs-on }}
     continue-on-error: true
