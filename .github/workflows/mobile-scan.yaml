@@ -8,7 +8,7 @@ on:
       args:
         description: Extra arguments
         type: string
-        default: '. --json --no-fail'
+        default: '. --exit-warning'
     secrets:
       SLACK_SECURITY_ALERT_WEBHOOK_URL:
         description: "Slack Webhook URL for alerts"
@@ -22,6 +22,7 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v3
     - name: Mobile App Scan
+      id: scan-step
       uses: MobSF/mobsfscan@0.3.8
       with:
         args: ${{ inputs.args }}
@@ -30,26 +31,16 @@ jobs:
     if: always()
     needs: mobsfscan
     runs-on: ${{ inputs.runs-on }}
+    continue-on-error: true
     steps:
-      - name: Display outputs
-        run:  |
-          echo ${{ needs.mobsfscan.outputs }}
-      - name: Post Slack Alert
-        uses: slackapi/slack-github-action@v1.25.0
-        with:
-          payload: |
-            {
-              "text": "GitHub Action build result: ${{ needs.mobsfscan.result }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "GitHub Action build result: ${{ needs.mobsfscan.result }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
-                  }
-                }
-              ]
-            }
+      - name: Trigger Slack Notification
+        uses: rtCamp/action-slack-notify@v2.3.0
         env:
-          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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44"
+          SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
+          SLACK_CHANNEL: github-security-alerts
+          SLACK_COLOR: ${{ needs.mobsfscan.result }}
+          SLACK_MESSAGE: ':hammer_and_wrench: Mobile App Scanner detected issues.'
+          MSG_MINIMAL: event,actions url,commit
+          SLACK_TITLE: Information
+          SLACK_FOOTER: Powered by Yassir Security Team
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
