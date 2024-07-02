@@ -20,6 +20,10 @@ on:
         type: number
         default: 1
         required: true
+      skip-dirs:
+        description: Comma separated list of directories where traversal is skipped
+        type: string
+        required: false
 
 jobs:
   trivy-scan:
@@ -37,6 +41,7 @@ jobs:
           scan-ref: .
           severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
+          skip-dirs: ${{ inputs.skip-dirs }}
           
   slack-alert:
     if: always()
