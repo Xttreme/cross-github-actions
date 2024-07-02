@@ -42,3 +42,20 @@ jobs:
           severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
           skip-dirs: ${{ inputs.skip-dirs }}
+          
+  slack-alert:
+    if: always()
+    needs: trivy-scan
+    runs-on: ${{ inputs.runs-on }}
+    continue-on-error: true
+    steps:
+      - name: Trigger Slack Notification
+        uses: rtCamp/action-slack-notify@v2.3.0
+        env:
+          SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
+          SLACK_CHANNEL: github-security-alerts
+          SLACK_COLOR: ${{ needs.trivy-scan.result }}
+          SLACK_MESSAGE: ':hammer_and_wrench: Trivy Scanner detected security issues.'
+          SLACK_TITLE: Information
+          SLACK_FOOTER: Powered by Yassir Security Team
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
