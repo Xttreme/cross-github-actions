@@ -9,17 +9,17 @@ on:
         description: The terraform plan output directory
         type: string
         default: .
-        required: true
+        required: false
       severity:
         description: The severities to output
         type: string
         default: 'CRITICAL'
-        required: true
+        required: false
       exit-code:
         description: Toggle scan failure if vulnerabilities are found
         type: number
         default: 1
-        required: true
+        required: false
       skip-dirs:
         description: Comma separated list of directories where traversal is skipped
         type: string
