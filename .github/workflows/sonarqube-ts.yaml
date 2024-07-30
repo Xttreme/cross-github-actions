@@ -25,7 +25,7 @@ jobs:
     name: "Sonarqube Scan" # modify to suit project name
     runs-on: ${{ inputs.runs-on }} # Preferable to make use of Yassir self hosted github runners
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Disable shallow clone to allow SonarQube retrieve full history of project repository.
       # This block adds code coverage to your build process (use npm/yarn/pnpm depending on your project package manager)
