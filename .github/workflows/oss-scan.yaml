@@ -34,7 +34,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Scan OSS
-        uses: aquasecurity/trivy-action@0.17.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           scanners: 'vuln,misconfig'
           scan-type: 'repo'
