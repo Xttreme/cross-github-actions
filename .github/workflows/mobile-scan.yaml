@@ -15,7 +15,7 @@ jobs:
     name: "MobSF SAST Scan"
     runs-on: ${{ inputs.runs-on }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Mobile App Scan
