@@ -13,7 +13,7 @@ on:
       severity:
         description: The severities to output
         type: string
-        default: 'CRITICAL'
+        default: "CRITICAL"
         required: false
       exit-code:
         description: Toggle scan failure if vulnerabilities are found
@@ -24,6 +24,11 @@ on:
         description: Comma separated list of directories where traversal is skipped
         type: string
         required: false
+      timeout:
+        description: "timeout (default 5m0s)"
+        type: string
+        required: false
+        default: "5m0s"
 
 jobs:
   trivy-scan:
@@ -36,12 +41,13 @@ jobs:
       - name: Scan OSS
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          scanners: 'vuln,misconfig'
-          scan-type: 'repo'
+          scanners: "vuln,misconfig"
+          scan-type: "repo"
           scan-ref: .
           severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
           skip-dirs: ${{ inputs.skip-dirs }}
+          timeout: ${{ inputs.timeout }}
 
   slack-alert:
     if: failure()
@@ -55,7 +61,7 @@ jobs:
           SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
           SLACK_CHANNEL: github-security-alerts
           SLACK_COLOR: ${{ needs.trivy-scan.result }}
-          SLACK_MESSAGE: ':hammer_and_wrench: Trivy Scanner detected security issues.'
+          SLACK_MESSAGE: ":hammer_and_wrench: Trivy Scanner detected security issues."
           SLACK_TITLE: Information
           SLACK_FOOTER: Powered by Yassir Security Team
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
