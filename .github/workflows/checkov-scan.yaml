@@ -10,15 +10,15 @@ on:
         type: string
         default: .
         required: false
-      severity:
-        description: The severities to output
-        type: string
-        default: "CRITICAL"
-        required: false
-      exit-code:
+      # severity:
+      #   description: The severities to output
+      #   type: string
+      #   default: "CRITICAL"
+        # required: false
+      soft-fail:
         description: Toggle scan failure if vulnerabilities are found
-        type: number
-        default: 1
+        type: boolean
+        default: false
         required: false
       skip-dirs:
         description: Comma separated list of directories where traversal is skipped
@@ -45,11 +45,11 @@ jobs:
       - name: Scan IaC
         uses: bridgecrewio/checkov-action@master
         with:
-          scanners: "vuln,misconfig"
+          # scanners: "vuln,misconfig"
           framework: terraform
           directory: ${{ inputs.directory }}
-          severity: ${{ inputs.severity }}
-          exit-code: ${{ inputs.exit-code }}
+          # severity: ${{ inputs.severity }}
+          soft-fail: ${{ inputs.soft-fail }}
           timeout: ${{ inputs.timeout }}
 
   slack-alert:
