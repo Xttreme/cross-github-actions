@@ -19,14 +19,13 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     name: Mobile App Scan
     steps:
-    - name: Checkout the code
-      uses: actions/checkout@v3
-    - name: Mobile App Scan
-      id: scan-step
-      uses: MobSF/mobsfscan@0.3.8
-      with:
-        args: ${{ inputs.args }}
-
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Mobile App Scan
+        uses: MobSF/mobsfscan@0.3.8
+        with:
+          args: ${{ inputs.args }}
   slack-alert:
     if: always()
     needs: mobsf-scan

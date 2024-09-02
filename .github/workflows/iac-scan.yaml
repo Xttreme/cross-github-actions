@@ -1,0 +1,107 @@
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The Platform to execute on
+        type: string
+        default: self-hosted
+      directory:
+        description: The terraform plan output directory
+        type: string
+        default: .
+        required: false
+      severity:
+        description: The severities to output
+        type: string
+        default: "CRITICAL"
+        required: false
+      exit-code:
+        description: Toggle scan failure if vulnerabilities are found
+        type: number
+        default: 1
+        required: false
+      skip-dirs:
+        description: Comma separated list of directories where traversal is skipped
+        type: string
+        required: false
+      timeout:
+        description: "timeout (default 5m0s)"
+        type: string
+        required: false
+        default: "5m0s"
+      iac_type:
+        description: "IaC Type (default terraform)"
+        type: string
+        required: false
+        default: "terraform"
+
+jobs:
+  trivy-scan:
+    name: "Trigger Trivy Scan"
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan OSS
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scanners: "vuln,misconfig,fs"
+          scan-type: "repo"
+          scan-ref: .
+          severity: ${{ inputs.severity }}
+          exit-code: ${{ inputs.exit-code }}
+          skip-dirs: ${{ inputs.skip-dirs }}
+          timeout: ${{ inputs.timeout }}
+  terrascan_job:
+    runs-on: self-hosted
+    name: terrascan-action
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Run Terrascan
+      id: terrascan
+      uses: tenable/terrascan-action@v1.4.1
+      with:
+        iac_type: ${{ inputs.iac_type }}
+        only_warn: true
+        sarif_upload: true
+    # - name: Upload SARIF file
+    #   uses: github/codeql-action/upload-sarif@v2
+    #   with:
+    #     sarif_file: terrascan.sarif
+  checkov-job:
+    runs-on: self-hosted
+    name: checkov-action
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Run Checkov action
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12.1347.0
+        with:
+          # file: example/tfplan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
+          # check: CKV_AWS_1 # optional: run only a specific check_id. can be comma separated list
+          # skip_check: CKV_AWS_2 # optional: skip a specific check_id. can be comma separated list
+          quiet: true # optional: display only failed checks
+          soft_fail: false # optional: do not return an error code if there are failed checks
+          framework: terraform # optional: run only on a specific infrastructure {cloudformation,terraform,kubernetes,all}
+          output_format: sarif # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif. Default: sarif
+          download_external_modules: true # optional: download external terraform modules from public git repositories and terraform registry
+          container_user: 1000 # optional: Define what UID and / or what GID to run the container under to prevent permission issues
+  # slack-alert:
+  #   if: failure()
+  #   needs: trivy-scan
+  #   runs-on: ${{ inputs.runs-on }}
+  #   continue-on-error: true
+  #   steps:
+  #     - name: Trigger Slack Notification
+  #       uses: rtCamp/action-slack-notify@v2.3.0
+  #       env:
+  #         SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
+  #         SLACK_CHANNEL: github-security-alerts
+  #         SLACK_COLOR: ${{ needs.trivy-scan.result }}
+  #         SLACK_MESSAGE: ":hammer_and_wrench: Trivy Scanner detected security issues."
+  #         SLACK_TITLE: Information
+  #         SLACK_FOOTER: Powered by Yassir Security Team
+  #         SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

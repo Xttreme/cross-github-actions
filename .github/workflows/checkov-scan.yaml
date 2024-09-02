@@ -10,15 +10,15 @@ on:
         type: string
         default: .
         required: false
-      severity:
-        description: The severities to output
-        type: string
-        default: "CRITICAL"
-        required: false
-      exit-code:
+      # severity:
+      #   description: The severities to output
+      #   type: string
+      #   default: "CRITICAL"
+        # required: false
+      soft-fail:
         description: Toggle scan failure if vulnerabilities are found
-        type: number
-        default: 1
+        type: boolean
+        default: false
         required: false
       skip-dirs:
         description: Comma separated list of directories where traversal is skipped
@@ -31,27 +31,30 @@ on:
         default: "5m0s"
 
 jobs:
-  trivy-scan:
-    name: "Trigger Trivy Scan"
+  checkov-scan:
+    name: "Trigger Checkov Scan"
     runs-on: ${{ inputs.runs-on }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Scan OSS
-        uses: aquasecurity/trivy-action@0.24.0
+      - name: Setup Python 3.8
+        uses: actions/setup-python@v4
         with:
-          scanners: "vuln,misconfig"
-          scan-type: "repo"
-          scan-ref: .
-          severity: ${{ inputs.severity }}
-          exit-code: ${{ inputs.exit-code }}
-          skip-dirs: ${{ inputs.skip-dirs }}
+          python-version: 3.8
+      - name: Scan IaC
+        uses: bridgecrewio/checkov-action@master
+        with:
+          # scanners: "vuln,misconfig"
+          framework: terraform
+          directory: ${{ inputs.directory }}
+          # severity: ${{ inputs.severity }}
+          soft-fail: ${{ inputs.soft-fail }}
           timeout: ${{ inputs.timeout }}
 
   slack-alert:
     if: failure()
-    needs: trivy-scan
+    needs: checkov-scan
     runs-on: ${{ inputs.runs-on }}
     continue-on-error: true
     steps:
@@ -60,8 +63,8 @@ jobs:
         env:
           SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
           SLACK_CHANNEL: github-security-alerts
-          SLACK_COLOR: ${{ needs.trivy-scan.result }}
-          SLACK_MESSAGE: ":hammer_and_wrench: Trivy Scanner detected security issues."
+          SLACK_COLOR: ${{ needs.checkov-scan.result }}
+          SLACK_MESSAGE: ":hammer_and_wrench: Checkov Scanner detected security misconfigurations."
           SLACK_TITLE: Information
           SLACK_FOOTER: Powered by Yassir Security Team
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
