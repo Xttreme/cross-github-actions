@@ -46,7 +46,7 @@ jobs:
       - name: Scan OSS
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          scanners: "vuln,misconfig,fs"
+          scanners: "vuln,misconfig"
           scan-type: "repo"
           scan-ref: .
           severity: ${{ inputs.severity }}
@@ -54,7 +54,7 @@ jobs:
           skip-dirs: ${{ inputs.skip-dirs }}
           timeout: ${{ inputs.timeout }}
   terrascan_job:
-    runs-on: self-hosted
+    runs-on: ${{ inputs.runs-on }}
     name: terrascan-action
     steps:
     - name: Checkout repository
@@ -71,7 +71,7 @@ jobs:
     #   with:
     #     sarif_file: terrascan.sarif
   checkov-job:
-    runs-on: self-hosted
+    runs-on: ${{ inputs.runs-on }}
     name: checkov-action
     steps:
       - name: Checkout repo
