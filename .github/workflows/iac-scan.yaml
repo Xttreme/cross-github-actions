@@ -64,7 +64,7 @@ jobs:
       uses: tenable/terrascan-action@v1.4.1
       with:
         iac_type: ${{ inputs.iac_type }}
-        only_warn: true
+        only_warn: false
         sarif_upload: true
     # - name: Upload SARIF file
     #   uses: github/codeql-action/upload-sarif@v2
