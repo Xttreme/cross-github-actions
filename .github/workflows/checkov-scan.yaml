@@ -4,67 +4,62 @@ on:
       runs-on:
         description: The Platform to execute on
         type: string
-        default: self-hosted
+        default: linux-iac
       directory:
         description: The terraform plan output directory
         type: string
         default: .
         required: false
-      # severity:
-      #   description: The severities to output
-      #   type: string
-      #   default: "CRITICAL"
-        # required: false
       soft-fail:
         description: Toggle scan failure if vulnerabilities are found
         type: boolean
         default: false
-        required: false
-      skip-dirs:
-        description: Comma separated list of directories where traversal is skipped
-        type: string
         required: false
       timeout:
         description: "timeout (default 5m0s)"
         type: string
         required: false
         default: "5m0s"
+      framework:
+        description: "IaC Type (default all)"
+        type: string
+        required: false
+        default: "all"
 
 jobs:
-  checkov-scan:
-    name: "Trigger Checkov Scan"
+  checkov:
     runs-on: ${{ inputs.runs-on }}
+    name: "Checkov Scan"
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Run Checkov action
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12.1347.0
         with:
-          fetch-depth: 0
-      - name: Setup Python 3.8
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.8
-      - name: Scan IaC
-        uses: bridgecrewio/checkov-action@master
-        with:
-          # scanners: "vuln,misconfig"
-          framework: terraform
           directory: ${{ inputs.directory }}
-          # severity: ${{ inputs.severity }}
-          soft-fail: ${{ inputs.soft-fail }}
-          timeout: ${{ inputs.timeout }}
-
+          # file: example/tfplan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
+          # check: CKV_AWS_1 # optional: run only a specific check_id. can be comma separated list
+          # skip_check: CKV_AWS_2 # optional: skip a specific check_id. can be comma separated list
+          quiet: true # optional: display only failed checks
+          soft_fail: false # optional: do not return an error code if there are failed checks
+          framework: all
+          output_format: sarif # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif. Default: sarif
+          download_external_modules: true # optional: download external terraform modules from public git repositories and terraform registry
+          container_user: 1000 # optional: Define what UID and / or what GID to run the container under to prevent permission issues
   slack-alert:
     if: failure()
-    needs: checkov-scan
+    needs: checkov
     runs-on: ${{ inputs.runs-on }}
     continue-on-error: true
     steps:
       - name: Trigger Slack Notification
         uses: rtCamp/action-slack-notify@v2.3.0
         env:
-          SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
+          SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
           SLACK_CHANNEL: github-security-alerts
-          SLACK_COLOR: ${{ needs.checkov-scan.result }}
-          SLACK_MESSAGE: ":hammer_and_wrench: Checkov Scanner detected security misconfigurations."
+          SLACK_COLOR: ${{ needs.checkov.result }}
+          SLACK_MESSAGE: ":hammer_and_wrench: Checkov Scanner detected security issues."
           SLACK_TITLE: Information
           SLACK_FOOTER: Powered by Yassir Security Team
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
