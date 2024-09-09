@@ -1,0 +1,68 @@
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The Platform to execute on
+        type: string
+        default: linux-iac
+      directory:
+        description: The terraform plan output directory
+        type: string
+        default: .
+        required: false
+      severity:
+        description: The severities to output
+        type: string
+        default: "CRITICAL"
+        required: false
+      exit-code:
+        description: Toggle scan failure if vulnerabilities are found
+        type: number
+        default: 1
+        required: false
+      skip-dirs:
+        description: Comma separated list of directories where traversal is skipped
+        type: string
+        required: false
+      timeout:
+        description: "timeout (default 5m0s)"
+        type: string
+        required: false
+        default: "5m0s"
+
+jobs:
+  trivy-scan:
+    name: "Trigger Trivy Scan"
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan OSS
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scanners: "vuln,misconfig"
+          scan-type: "repo, config"
+          scan-ref: ${{ inputs.severity }} ##'./cdktf.out/stacks'
+          severity: ${{ inputs.severity }}
+          exit-code: ${{ inputs.exit-code }}
+          skip-dirs: ${{ inputs.skip-dirs }}
+          timeout: ${{ inputs.timeout }}
+          format: 'sarif'
+
+  slack-alert:
+    if: failure()
+    needs: trivy-scan
+    runs-on: ${{ inputs.runs-on }}
+    continue-on-error: true
+    steps:
+      - name: Trigger Slack Notification
+        uses: rtCamp/action-slack-notify@v2.3.0
+        env:
+          SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
+          SLACK_CHANNEL: github-security-alerts
+          SLACK_COLOR: ${{ needs.trivy-scan.result }}
+          SLACK_MESSAGE: ":hammer_and_wrench: Trivy Scanner detected security issues."
+          SLACK_TITLE: Information
+          SLACK_FOOTER: Powered by Yassir Security Team
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
