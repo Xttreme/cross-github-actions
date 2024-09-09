@@ -13,8 +13,12 @@ on:
       severity:
         description: The severities to output
         type: string
-        default: "CRITICAL"
+        default: "CRITICAL, HIGH"
         required: false
+      scan-ref:
+        description: The target directory to scan
+        type: string
+        required: true
       exit-code:
         description: Toggle scan failure if vulnerabilities are found
         type: number
@@ -41,14 +45,12 @@ jobs:
       - name: Scan OSS
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          scanners: "vuln,misconfig"
-          scan-type: "repo, config"
-          scan-ref: ${{ inputs.severity }} ##'./cdktf.out/stacks'
+          scan-type: "config"
+          scan-ref: ${{ inputs.scan-ref }} ##'./cdktf.out/stacks'
           severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
           skip-dirs: ${{ inputs.skip-dirs }}
           timeout: ${{ inputs.timeout }}
-          format: 'sarif'
 
   slack-alert:
     if: failure()
