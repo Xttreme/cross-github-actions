@@ -42,12 +42,13 @@ jobs:
         uses: aquasecurity/trivy-action@0.24.0
         with:
           scanners: "vuln,misconfig"
-          scan-type: "repo"
-          scan-ref: .
+          scan-type: "repo, config"
+          scan-ref: ${{ inputs.severity }} ##'./cdktf.out/stacks'
           severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
           skip-dirs: ${{ inputs.skip-dirs }}
           timeout: ${{ inputs.timeout }}
+          format: 'sarif'
 
   slack-alert:
     if: failure()

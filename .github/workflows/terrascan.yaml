@@ -4,32 +4,30 @@ on:
       runs-on:
         description: The Platform to execute on
         type: string
-        default: ubuntu-latest
-      args:
-        description: Extra arguments
+        default: linux-iac
+      iac_type:
+        description: "IaC Type (default terraform)"
         type: string
-        default: '. --exit-warning'
-    secrets:
-      SLACK_SECURITY_ALERT_WEBHOOK_URL:
-        description: "Slack Webhook URL for alerts"
-        required: true
+        required: false
+        default: "terraform"
 
 jobs:
-  mobsf-scan:
+  terrascan:
     runs-on: ${{ inputs.runs-on }}
-    name: Mobile App Scan
+    name: "Terrascan"
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Mobile App Scan
-        uses: MobSF/mobsfscan@0.3.8
-        with:
-          args: ${{ inputs.args }}
-
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Run Terrascan
+      id: terrascan
+      uses: tenable/terrascan-action@v1.4.1
+      with:
+        iac_type: ${{ inputs.iac_type }}
+        only_warn: false
+        find_vulnerabilities: true
   slack-alert:
     if: failure()
-    needs: mobsf-scan
+    needs: terrascan
     runs-on: ${{ inputs.runs-on }}
     continue-on-error: true
     steps:
@@ -38,8 +36,8 @@ jobs:
         env:
           SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
           SLACK_CHANNEL: github-security-alerts
-          SLACK_COLOR: ${{ needs.mobsf-scan.result }}
-          SLACK_MESSAGE: ':hammer_and_wrench: Mobile App Scanner detected security issues.'
+          SLACK_COLOR: ${{ needs.terrascan.result }}
+          SLACK_MESSAGE: ":hammer_and_wrench: Terrascan detected security issues."
           SLACK_TITLE: Information
           SLACK_FOOTER: Powered by Yassir Security Team
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
