@@ -31,6 +31,11 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     name: "Checkov Scan"
     steps:
+      - name: Download CDKTF Plan Output Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cdktf-plan-output
+          path: ${{ inputs.directory }}  # Download the artifact to the specified directory
       - name: Checkout repo
         uses: actions/checkout@v3
       - name: Run Checkov action

@@ -39,6 +39,11 @@ jobs:
     name: "Trigger Trivy Scan"
     runs-on: ${{ inputs.runs-on }}
     steps:
+      - name: Download CDKTF Plan Output Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cdktf-plan-output
+          path: ${{ inputs.directory }}  # Download the artifact to the specified directory
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
