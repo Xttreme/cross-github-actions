@@ -17,7 +17,7 @@ on:
         description: "The name of the artifact to download"
         type: string
         required: true
-      directory:
+      download-path:
         description: The directory to place the downloaded artifact
         type: string
         default: .
