@@ -5,11 +5,32 @@ on:
         description: The Platform to execute on
         type: string
         default: linux-iac
+      repository:
+        description: "The full name of the repository from which to download the artifact"
+        type: string
+        required: true
       directory:
         description: The terraform plan output directory
         type: string
         default: .
         required: false
+      run-id:
+        description: "The ID of the workflow run to download the artifact from"
+        type: string
+        required: true
+      artifact-name:
+        description: "The name of the artifact to download"
+        type: string
+        required: true
+      download-path:
+        description: The directory to place the downloaded artifact
+        type: string
+        default: .
+        required: false
+      github-token:
+        description: "GitHub token with the necessary permissions to download artifacts"
+        type: string
+        required: true
       soft-fail:
         description: Toggle scan failure if vulnerabilities are found
         type: boolean
@@ -34,10 +55,11 @@ jobs:
       - name: Download CDKTF Plan Output Artifact
         uses: actions/download-artifact@v4
         with:
-          name: cdktf-plan-output
-          path: ${{ inputs.directory }}  # Download the artifact to the specified directory
-      - name: Checkout repo
-        uses: actions/checkout@v3
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.download-path }}
+          github-token: ${{ inputs.github-token }}
+          repository: ${{ inputs.repository }}
+          run-id: ${{ inputs.run-id }}
       - name: Run Checkov action
         id: checkov
         uses: bridgecrewio/checkov-action@v12.1347.0
