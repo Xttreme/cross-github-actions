@@ -2,21 +2,32 @@ on:
   workflow_call:
     inputs:
       runs-on:
-        description: The Platform to execute on
+        description: The platform to execute on
         type: string
         default: linux-iac
-      directory:
-        description: The terraform plan output directory
+      repository:
+        description: "The full name of the repository from which to download the artifact"
+        type: string
+        required: true
+      run-id:
+        description: "The ID of the workflow run to download the artifact from"
+        type: string
+        required: true
+      artifact-name:
+        description: "The name of the artifact to download"
+        type: string
+        required: true
+      download-path:
+        description: The directory to place the downloaded artifact
         type: string
         default: .
         required: false
-      severity:
-        description: The severities to output
-        type: string
-        default: "CRITICAL, HIGH"
-        required: false
       scan-ref:
         description: The target directory to scan
+        type: string
+        required: true
+      github-token:
+        description: "GitHub token with the necessary permissions to download artifacts"
         type: string
         required: true
       exit-code:
@@ -24,38 +35,32 @@ on:
         type: number
         default: 1
         required: false
-      skip-dirs:
-        description: Comma separated list of directories where traversal is skipped
+      severity:
+        description: The severities to output
         type: string
+        default: "CRITICAL, HIGH"
         required: false
-      timeout:
-        description: "timeout (default 5m0s)"
-        type: string
-        required: false
-        default: "5m0s"
 
 jobs:
   trivy-scan:
-    name: "Trigger Trivy Scan"
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Download CDKTF Plan Output Artifact
         uses: actions/download-artifact@v4
         with:
-          name: cdktf-plan-output
-          path: ${{ inputs.directory }}  # Download the artifact to the specified directory
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Scan OSS
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.download-path }}
+          github-token: ${{ inputs.github-token }}
+          repository: ${{ inputs.repository }}
+          run-id: ${{ inputs.run-id }}
+
+      - name: Scan OSS with Trivy
         uses: aquasecurity/trivy-action@0.24.0
         with:
           scan-type: "config"
-          scan-ref: ${{ inputs.scan-ref }} ##'./cdktf.out/stacks'
+          scan-ref: ${{ inputs.scan-ref }}
           severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
-          skip-dirs: ${{ inputs.skip-dirs }}
-          timeout: ${{ inputs.timeout }}
 
   slack-alert:
     if: failure()
