@@ -1,5 +1,9 @@
 on:
   workflow_call:
+    secrets:
+      SLACK_WEBHOOK:
+        description: Yassir Security Slack Webhook
+        required: false
     inputs:
       runs-on:
         description: The platform to execute on

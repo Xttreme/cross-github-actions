@@ -1,5 +1,9 @@
 on:
   workflow_call:
+    secrets:
+      SLACK_WEBHOOK:
+        description: Yassir Security Slack Webhook
+        required: false
     inputs:
       runs-on:
         description: The Platform to execute on
@@ -44,7 +48,7 @@ jobs:
           quiet: true # optional: display only failed checks
           soft_fail: false # optional: do not return an error code if there are failed checks
           framework: all
-          output_format: cli,junitxml # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif. Default: sarif
+          output_format: cli # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif. Default: sarif
           download_external_modules: true # optional: download external terraform modules from public git repositories and terraform registry
           container_user: 1000 # optional: Define what UID and / or what GID to run the container under to prevent permission issues
   slack-alert:
