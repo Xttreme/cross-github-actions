@@ -1,5 +1,9 @@
 on:
   workflow_call:
+    secrets:
+      SLACK_WEBHOOK:
+        description: Yassir Security Slack Webhook
+        required: false
     inputs:
       runs-on:
         description: The Platform to execute on
@@ -58,6 +62,7 @@ jobs:
       - name: Trigger Slack Notification
         uses: rtCamp/action-slack-notify@v2.3.0
         env:
+          # SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
           SLACK_CHANNEL: github-security-alerts
           SLACK_COLOR: ${{ needs.trivy-scan.result }}
