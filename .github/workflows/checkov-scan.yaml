@@ -31,30 +31,56 @@ on:
         default: "5m0s"
 
 jobs:
-  checkov-scan:
-    name: "Trigger Checkov Scan"
+  checkov:
     runs-on: ${{ inputs.runs-on }}
+    name: "Checkov Scan"
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Run Checkov action
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12
         with:
-          fetch-depth: 0
-      - name: Setup Python 3.8
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.8
-      - name: Scan IaC
-        uses: bridgecrewio/checkov-action@master
-        with:
-          # scanners: "vuln,misconfig"
-          framework: terraform
           directory: ${{ inputs.directory }}
-          # severity: ${{ inputs.severity }}
-          soft-fail: ${{ inputs.soft-fail }}
-          timeout: ${{ inputs.timeout }}
+          # file: example/tfplan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
+          # check: CKV_AWS_1 # optional: run only a specific check_id. can be comma separated list
+          # skip_check: CKV_AWS_2 # optional: skip a specific check_id. can be comma separated list
+          quiet: true # optional: display only failed checks
+          soft_fail: false # optional: do not return an error code if there are failed checks
+          framework: all
+          output_format: cli,junitxml # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif. Default: sarif
+          output_file_path: console,tests/results/checkov.xml
+          download_external_modules: true # optional: download external terraform modules from public git repositories and terraform registry
+          container_user: 1000 # optional: Define what UID and / or what GID to run the container under to prevent permission issues
+      - uses: actions/upload-artifact@v4
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          name: results_checkov
+          path: tests/results/checkov.xml
+          retention-days: 1
+  report_results:
+    runs-on: ${{ inputs.runs-on }}
+    if: ${{ always() }}
+    needs: checkov
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: tests/results
+          pattern: results_*
+          merge-multiple: true
+      - name: Publish Report
+        uses: mikepenz/action-junit-report@v5.0.0-a02
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          report_paths: "tests/results/*.xml"
+          detailed_summary: true
+          comment: true
+          check_name: tests
 
   slack-alert:
     if: failure()
-    needs: checkov-scan
+    needs: checkov
     runs-on: ${{ inputs.runs-on }}
     continue-on-error: true
     steps:
@@ -63,7 +89,7 @@ jobs:
         env:
           SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
           SLACK_CHANNEL: github-security-alerts
-          SLACK_COLOR: ${{ needs.checkov-scan.result }}
+          SLACK_COLOR: ${{ needs.checkov.result }}
           SLACK_MESSAGE: ":hammer_and_wrench: Checkov Scanner detected security misconfigurations."
           SLACK_TITLE: Information
           SLACK_FOOTER: Powered by Yassir Security Team
