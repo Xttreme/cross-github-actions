@@ -10,7 +10,7 @@ on:
         type: string
         default: '. --exit-warning'
     secrets:
-      SLACK_SECURITY_ALERT_WEBHOOK_URL:
+      SLACK_WEBHOOK:
         description: "Slack Webhook URL for alerts"
         required: true
 
@@ -36,7 +36,7 @@ jobs:
       - name: Trigger Slack Notification
         uses: rtCamp/action-slack-notify@v2.3.0
         env:
-          SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: github-security-alerts
           SLACK_COLOR: ${{ needs.mobsf-scan.result }}
           SLACK_MESSAGE: ':hammer_and_wrench: Mobile App Scanner detected security issues.'
