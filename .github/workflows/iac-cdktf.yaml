@@ -95,8 +95,8 @@ jobs:
         uses: aquasecurity/trivy-action@0.24.0
         with:
           scan-type: "config"
-          scan-ref: ${{ inputs.directory }}
-          severity: ${{ inputs.severity }}
+          scan-ref: ./cdk.tf.json
+          # severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
 
       - uses: actions/upload-artifact@v4
