@@ -9,11 +9,42 @@ on:
         description: The Platform to execute on
         type: string
         default: linux-iac
+      repository:
+        description: "The full name of the repository from which to download the artifact"
+        type: string
+        required: true
       directory:
         description: The terraform plan output directory
         type: string
         default: .
         required: false
+      run-id:
+        description: "The ID of the workflow run to download the artifact from"
+        type: string
+        required: true
+      artifact-name:
+        description: "The name of the artifact to download"
+        type: string
+        required: true
+      download-path:
+        description: The directory to place the downloaded artifact
+        type: string
+        default: .
+        required: false
+      severity:
+        description: The severities to output
+        type: string
+        default: "CRITICAL, HIGH"
+        required: false
+      exit-code:
+        description: Toggle scan failure if vulnerabilities are found
+        type: number
+        default: 1
+        required: false
+      github-token:
+        description: "GitHub token with the necessary permissions to download artifacts"
+        type: string
+        required: true
       soft-fail:
         description: Toggle scan failure if vulnerabilities are found
         type: boolean
@@ -31,12 +62,38 @@ on:
         default: "all"
 
 jobs:
+  trivy-scan:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Download CDKTF Plan Output Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.download-path }}
+          github-token: ${{ inputs.github-token }}
+          repository: ${{ inputs.repository }}
+          run-id: ${{ inputs.run-id }}
+
+      - name: Scan OSS with Trivy
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: "config"
+          scan-ref: ${{ inputs.directory }}
+          severity: ${{ inputs.severity }}
+          exit-code: ${{ inputs.exit-code }}
+
   checkov:
     runs-on: ${{ inputs.runs-on }}
     name: "Checkov Scan"
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Download CDKTF Plan Output Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.download-path }}
+          github-token: ${{ inputs.github-token }}
+          repository: ${{ inputs.repository }}
+          run-id: ${{ inputs.run-id }}
       - name: Run Checkov action
         id: checkov
         uses: bridgecrewio/checkov-action@v12
@@ -45,9 +102,9 @@ jobs:
           # file: example/tfplan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
           # check: CKV_AWS_1 # optional: run only a specific check_id. can be comma separated list
           # skip_check: CKV_AWS_2 # optional: skip a specific check_id. can be comma separated list
-          quiet: true # optional: display only failed checks
+          quiet: false # optional: display only failed checks
           soft_fail: false # optional: do not return an error code if there are failed checks
-          framework: all
+          framework: terraform_plan
           output_format: cli,junitxml # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif. Default: sarif
           output_file_path: console,tests/results/checkov.xml
           download_external_modules: true # optional: download external terraform modules from public git repositories and terraform registry
