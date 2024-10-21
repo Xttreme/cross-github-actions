@@ -3,7 +3,10 @@ on:
     secrets:
       SLACK_WEBHOOK:
         description: Yassir Security Slack Webhook
-        required: false
+        required: true
+      DECRYPTION_KEY:
+          description: The secret key to decrypt the artifact
+          required: true
     inputs:
       runs-on:
         description: The Platform to execute on
@@ -31,6 +34,10 @@ on:
         type: string
         default: .
         required: false
+      scan-ref:
+        description: The target directory to scan
+        type: string
+        required: true
       severity:
         description: The severities to output
         type: string
@@ -74,6 +81,16 @@ jobs:
           repository: ${{ inputs.repository }}
           run-id: ${{ inputs.run-id }}
 
+      - name: Decrypt CDKTF plan
+        env:
+         DECRYPTION_KEY: ${{ secrets.DECRYPTION_KEY }} # The same key used for encryption
+         PATH_TO_ARTIFACT: ${{ inputs.download-path }}/${{ inputs.artifact-name }}
+        run: |
+          echo ${{ inputs.download-path }}/${{ inputs.artifact-name }}
+          openssl aes-256-cbc -pbkdf2 -iter 10000 -d -in "${PATH_TO_ARTIFACT}" -out "${{ inputs.download-path }}/cdk.tf.json" -k "$DECRYPTION_KEY"
+          ls
+          cat ${{ inputs.directory }}/cdk.tf.json
+
       - name: Scan OSS with Trivy
         uses: aquasecurity/trivy-action@0.24.0
         with:
@@ -81,6 +98,13 @@ jobs:
           scan-ref: ${{ inputs.directory }}
           severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
+
+      - uses: actions/upload-artifact@v4
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          name: results_checkov
+          path: tests/results/checkov.xml
+          retention-days: 1
 
   checkov:
     runs-on: ${{ inputs.runs-on }}
@@ -94,6 +118,13 @@ jobs:
           github-token: ${{ inputs.github-token }}
           repository: ${{ inputs.repository }}
           run-id: ${{ inputs.run-id }}
+
+      - name: Decrypt CDKTF plan
+        env:
+         DECRYPTION_KEY: ${{ secrets.DECRYPTION_KEY }} # The same key used for encryption
+         PATH_TO_ARTIFACT: ${{ inputs.download-path }}/${{ inputs.artifact-name }}
+        run: openssl aes-256-cbc -pbkdf2 -iter 10000 -d -in "${PATH_TO_ARTIFACT}" -out "${{ inputs.download-path }}/cdk.tf.json" -k "$DECRYPTION_KEY"
+
       - name: Run Checkov action
         id: checkov
         uses: bridgecrewio/checkov-action@v12
