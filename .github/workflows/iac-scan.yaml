@@ -14,23 +14,54 @@ on:
         type: string
         default: .
         required: false
-      soft-fail:
+      severity:
+        description: The severities to output
+        type: string
+        default: "CRITICAL, HIGH"
+        required: false
+      exit-code:
         description: Toggle scan failure if vulnerabilities are found
-        type: boolean
-        default: false
+        type: number
+        default: 1
+        required: false
+      skip-dirs:
+        description: Comma separated list of directories where traversal is skipped
+        type: string
         required: false
       timeout:
         description: "timeout (default 5m0s)"
         type: string
         required: false
         default: "5m0s"
-      framework:
-        description: "IaC Type (default all)"
-        type: string
-        required: false
-        default: "all"
 
 jobs:
+  trivy-scan:
+    name: "Trigger Trivy Scan"
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan OSS
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scanners: "vuln,misconfig"
+          scan-type: "repo"
+          scan-ref: ${{ inputs.directory }}
+          format: "template"
+          template: "@contrib/junit.tpl"
+          output: "tests/results/trivy.xml"
+          severity: ${{ inputs.severity }}
+          exit-code: ${{ inputs.exit-code }}
+          skip-dirs: ${{ inputs.skip-dirs }}
+          timeout: ${{ inputs.timeout }}
+      - uses: actions/upload-artifact@v4
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          name: results_trivy
+          path: tests/results/trivy.xml
+          retention-days: 1
+
   checkov:
     runs-on: ${{ inputs.runs-on }}
     name: "Checkov Scan"
@@ -58,6 +89,7 @@ jobs:
           name: results_checkov
           path: tests/results/checkov.xml
           retention-days: 1
+
   report_results:
     runs-on: ${{ inputs.runs-on }}
     if: ${{ always() }}
@@ -77,9 +109,10 @@ jobs:
           detailed_summary: true
           comment: true
           check_name: tests
+
   slack-alert:
     if: failure()
-    needs: checkov
+    needs: [trivy-scan, checkov]
     runs-on: ${{ inputs.runs-on }}
     continue-on-error: true
     steps:
@@ -88,8 +121,8 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_CHANNEL: github-security-alerts
-          SLACK_COLOR: ${{ needs.checkov.result }}
-          SLACK_MESSAGE: ":hammer_and_wrench: Checkov Scanner detected security issues."
+          SLACK_COLOR: ${{ needs.trivy-scan.result }}
+          SLACK_MESSAGE: ":hammer_and_wrench: Trivy Scanner detected security issues."
           SLACK_TITLE: Information
           SLACK_FOOTER: Powered by Yassir Security Team
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

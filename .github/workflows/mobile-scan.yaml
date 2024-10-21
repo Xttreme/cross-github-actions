@@ -4,7 +4,7 @@ on:
       runs-on:
         description: The Platform to execute on
         type: string
-        default: ubuntu-latest
+        default: linux-iac
       args:
         description: Extra arguments
         type: string
