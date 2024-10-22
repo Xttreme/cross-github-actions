@@ -1,9 +1,9 @@
 on:
   workflow_call:
-    secrets:
-      SLACK_WEBHOOK:
-        description: Yassir Security Slack Webhook
-        required: false
+    # secrets:
+    #   SLACK_WEBHOOK:
+    #     description: Yassir Security Slack Webhook
+    #     required: false
     inputs:
       runs-on:
         description: The Platform to execute on
@@ -110,19 +110,19 @@ jobs:
           comment: true
           check_name: tests
 
-  slack-alert:
-    if: failure()
-    needs: [trivy-scan, checkov]
-    runs-on: ${{ inputs.runs-on }}
-    continue-on-error: true
-    steps:
-      - name: Trigger Slack Notification
-        uses: rtCamp/action-slack-notify@v2.3.0
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_CHANNEL: github-security-alerts
-          SLACK_COLOR: ${{ needs.trivy-scan.result }}
-          SLACK_MESSAGE: ":hammer_and_wrench: Trivy Scanner detected security issues."
-          SLACK_TITLE: Information
-          SLACK_FOOTER: Powered by Yassir Security Team
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+  # slack-alert:
+  #   if: failure()
+  #   needs: [trivy-scan, checkov]
+  #   runs-on: ${{ inputs.runs-on }}
+  #   continue-on-error: true
+  #   steps:
+  #     - name: Trigger Slack Notification
+  #       uses: rtCamp/action-slack-notify@v2.3.0
+  #       env:
+  #         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+  #         SLACK_CHANNEL: github-security-alerts
+  #         SLACK_COLOR: ${{ needs.trivy-scan.result }}
+  #         SLACK_MESSAGE: ":hammer_and_wrench: Trivy Scanner detected security issues."
+  #         SLACK_TITLE: Information
+  #         SLACK_FOOTER: Powered by Yassir Security Team
+  #         SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
