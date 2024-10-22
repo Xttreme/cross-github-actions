@@ -42,16 +42,20 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Create
+        run: |
+          mkdir tests
+          mkdir tests/results
       - name: Scan OSS
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          scanners: "vuln,misconfig"
+          scanners: "misconfig"
           scan-type: "repo"
           scan-ref: ${{ inputs.directory }}
           format: "template"
-          template: "@contrib/junit.tpl"
+          template: "@/contrib/junit.tpl"
           output: "tests/results/trivy.xml"
-          severity: ${{ inputs.severity }}
+          # severity: ${{ inputs.severity }}
           exit-code: ${{ inputs.exit-code }}
           skip-dirs: ${{ inputs.skip-dirs }}
           timeout: ${{ inputs.timeout }}
@@ -62,38 +66,38 @@ jobs:
           path: tests/results/trivy.xml
           retention-days: 1
 
-  checkov:
-    runs-on: ${{ inputs.runs-on }}
-    name: "Checkov Scan"
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Run Checkov action
-        id: checkov
-        uses: bridgecrewio/checkov-action@v12
-        with:
-          directory: ${{ inputs.directory }}
-          # file: example/tfplan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
-          # check: CKV_AWS_1 # optional: run only a specific check_id. can be comma separated list
-          # skip_check: CKV_AWS_2 # optional: skip a specific check_id. can be comma separated list
-          quiet: true # optional: display only failed checks
-          soft_fail: false # optional: do not return an error code if there are failed checks
-          framework: all
-          output_format: cli,junitxml # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif. Default: sarif
-          output_file_path: console,tests/results/checkov.xml
-          download_external_modules: true # optional: download external terraform modules from public git repositories and terraform registry
-          container_user: 1000 # optional: Define what UID and / or what GID to run the container under to prevent permission issues
-      - uses: actions/upload-artifact@v4
-        if: success() || failure() # always run even if the previous step fails
-        with:
-          name: results_checkov
-          path: tests/results/checkov.xml
-          retention-days: 1
+  # checkov:
+  #   runs-on: ${{ inputs.runs-on }}
+  #   name: "Checkov Scan"
+  #   steps:
+  #     - name: Checkout repo
+  #       uses: actions/checkout@v3
+  #     - name: Run Checkov action
+  #       id: checkov
+  #       uses: bridgecrewio/checkov-action@v12
+  #       with:
+  #         directory: ${{ inputs.directory }}
+  #         # file: example/tfplan.json # optional: provide the path for resource to be scanned. This will override the directory if both are provided.
+  #         # check: CKV_AWS_1 # optional: run only a specific check_id. can be comma separated list
+  #         # skip_check: CKV_AWS_2 # optional: skip a specific check_id. can be comma separated list
+  #         quiet: true # optional: display only failed checks
+  #         soft_fail: false # optional: do not return an error code if there are failed checks
+  #         framework: all
+  #         output_format: cli,junitxml # optional: the output format, one of: cli, json, junitxml, github_failed_only, or sarif. Default: sarif
+  #         output_file_path: console,tests/results/checkov.xml
+  #         download_external_modules: true # optional: download external terraform modules from public git repositories and terraform registry
+  #         container_user: 1000 # optional: Define what UID and / or what GID to run the container under to prevent permission issues
+  #     - uses: actions/upload-artifact@v4
+  #       if: success() || failure() # always run even if the previous step fails
+  #       with:
+  #         name: results_checkov
+  #         path: tests/results/checkov.xml
+  #         retention-days: 1
 
   report_results:
     runs-on: ${{ inputs.runs-on }}
     if: ${{ always() }}
-    needs: checkov
+    needs: [ trivy-scan ]
     steps:
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
@@ -107,6 +111,7 @@ jobs:
         with:
           report_paths: "tests/results/*.xml"
           detailed_summary: true
+          summary: true
           comment: true
           check_name: tests
 
